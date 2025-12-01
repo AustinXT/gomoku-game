@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import type { Cell, GameStatus, Position } from '@/utils/tauri';
 
+interface ToastMessage {
+  id: string;
+  message: string;
+  type: 'error' | 'success' | 'info';
+}
+
 interface GameState {
   board: Cell[][];
   currentPlayer: 'black' | 'white';
@@ -8,12 +14,15 @@ interface GameState {
   moveHistory: Array<{ x: number; y: number }>;
   winningLine: Position[] | null;
   isProcessing: boolean;
+  toast: ToastMessage | null;
 
   // Actions
   placeStone: (x: number, y: number) => void;
   newGame: () => void;
   undoMove: () => void;
   checkWinner: (board: Cell[][], x: number, y: number) => { hasWon: boolean; line?: Position[] };
+  showToast: (message: string, type?: ToastMessage['type']) => void;
+  clearToast: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -23,6 +32,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   moveHistory: [],
   winningLine: null,
   isProcessing: false,
+  toast: null,
 
   checkWinner: (board: Cell[][], x: number, y: number) => {
     const player = board[x][y];
@@ -62,9 +72,20 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   placeStone: (x: number, y: number) => {
-    const { isProcessing, gameStatus, board } = get();
+    const { isProcessing, gameStatus, board, showToast } = get();
 
-    if (isProcessing || gameStatus !== 'playing' || board[x][y] !== null) {
+    if (isProcessing) {
+      showToast('请等待当前操作完成', 'error');
+      return;
+    }
+
+    if (gameStatus !== 'playing') {
+      showToast('游戏已结束，请开始新游戏', 'error');
+      return;
+    }
+
+    if (board[x][y] !== null) {
+      showToast('该位置已有棋子', 'error');
       return;
     }
 
@@ -78,8 +99,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     let newGameStatus: GameStatus = 'playing';
     if (hasWon) {
       newGameStatus = get().currentPlayer === 'black' ? 'black_win' : 'white_win';
+      showToast(`${get().currentPlayer === 'black' ? '黑棋' : '白棋'}获胜！`, 'success');
     } else if (isBoardFull) {
       newGameStatus = 'draw';
+      showToast('平局！', 'info');
     }
 
     set({
@@ -99,11 +122,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       moveHistory: [],
       winningLine: null,
     });
+    get().showToast('新游戏已开始', 'success');
   },
 
   undoMove: () => {
-    const { moveHistory, board } = get();
-    if (moveHistory.length === 0) return;
+    const { moveHistory, board, showToast } = get();
+    if (moveHistory.length === 0) {
+      showToast('没有可悔棋的步骤', 'error');
+      return;
+    }
 
     const lastMove = moveHistory[moveHistory.length - 1];
     const newBoard = board.map(row => [...row]);
@@ -116,5 +143,21 @@ export const useGameStore = create<GameState>((set, get) => ({
       moveHistory: moveHistory.slice(0, -1),
       winningLine: null,
     });
+    showToast('悔棋成功', 'success');
   },
+
+  showToast: (message: string, type: ToastMessage['type'] = 'info') => {
+    const id = Date.now().toString();
+    set({ toast: { id, message, type } });
+
+    // Auto-clear toast after 3 seconds
+    setTimeout(() => {
+      const currentToast = get().toast;
+      if (currentToast?.id === id) {
+        set({ toast: null });
+      }
+    }, 3000);
+  },
+
+  clearToast: () => set({ toast: null }),
 }));

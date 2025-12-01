@@ -3,5 +3,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    gomoku_game_lib::run();
+    gomoku_game_lib::run()
 }

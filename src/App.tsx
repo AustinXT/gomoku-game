@@ -2,6 +2,7 @@ import Board from '@/components/Board/Board';
 import GameControls from '@/components/Game/GameControls';
 import GameStatus from '@/components/Game/GameStatus';
 import MoveHistory from '@/components/Game/MoveHistory';
+import Toast from '@/components/ui/Toast';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           </div>
         </div>
       </div>
+      <Toast />
     </div>
   );
 }
