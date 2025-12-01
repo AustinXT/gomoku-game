@@ -412,8 +412,6 @@ class BrowserGameState {
 
   // 分析一条线上的棋型
   analyzeLinePattern(x: number, y: number, dx: number, dy: number, player: Player): string | null {
-    const opponent = player === 'black' ? 'white' : 'black';
-
     // 获取这条线上的棋子情况 [-4, 4]
     const line: (Cell | 'out')[] = [];
     for (let i = -4; i <= 4; i++) {

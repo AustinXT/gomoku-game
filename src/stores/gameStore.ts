@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Cell, GameStatus, Position, GameMode, Difficulty, LoadGameResult } from '@/utils/tauri';
+import type { Cell, GameStatus, Position, GameMode, Difficulty } from '@/utils/tauri';
 import { tauriApi } from '@/utils/tauri';
 
 interface ToastMessage {

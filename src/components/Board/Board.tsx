@@ -3,7 +3,7 @@ import { useGameStore } from '@/stores/gameStore';
 import Cell from './Cell';
 
 const Board: React.FC = () => {
-  const { board, placeStone, winningLine, gameStatus, currentPlayer, gameMode } = useGameStore();
+  const { board, placeStone, winningLine, gameStatus } = useGameStore();
 
   const isWinningCell = (x: number, y: number): boolean => {
     if (!winningLine) return false;
