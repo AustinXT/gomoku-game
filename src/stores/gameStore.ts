@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { tauriApi } from '@/utils/tauri';
 import type { Cell, GameStatus, Position } from '@/utils/tauri';
 
 interface GameState {
@@ -11,10 +10,10 @@ interface GameState {
   isProcessing: boolean;
 
   // Actions
-  placeStone: (x: number, y: number) => Promise<void>;
-  newGame: () => Promise<void>;
-  undoMove: () => Promise<void>;
-  syncBoardState: () => Promise<void>;
+  placeStone: (x: number, y: number) => void;
+  newGame: () => void;
+  undoMove: () => void;
+  checkWinner: (board: Cell[][], x: number, y: number) => { hasWon: boolean; line?: Position[] };
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -25,97 +24,97 @@ export const useGameStore = create<GameState>((set, get) => ({
   winningLine: null,
   isProcessing: false,
 
-  placeStone: async (x: number, y: number) => {
-    const { isProcessing, gameStatus } = get();
+  checkWinner: (board: Cell[][], x: number, y: number) => {
+    const player = board[x][y];
+    if (!player) return { hasWon: false };
 
-    if (isProcessing || gameStatus !== 'playing') {
+    const directions = [
+      [[0, 1], [0, -1]], // 水平
+      [[1, 0], [-1, 0]], // 垂直
+      [[1, 1], [-1, -1]], // 对角线
+      [[1, -1], [-1, 1]]  // 反对角线
+    ];
+
+    for (const direction of directions) {
+      const line: Position[] = [{ x, y }];
+
+      for (const [dx, dy] of direction) {
+        let i = 1;
+        while (true) {
+          const nx = x + dx * i;
+          const ny = y + dy * i;
+
+          if (nx < 0 || nx >= 15 || ny < 0 || ny >= 15 || board[nx][ny] !== player) {
+            break;
+          }
+
+          line.push({ x: nx, y: ny });
+          i++;
+        }
+      }
+
+      if (line.length >= 5) {
+        return { hasWon: true, line };
+      }
+    }
+
+    return { hasWon: false };
+  },
+
+  placeStone: (x: number, y: number) => {
+    const { isProcessing, gameStatus, board } = get();
+
+    if (isProcessing || gameStatus !== 'playing' || board[x][y] !== null) {
       return;
     }
 
-    set({ isProcessing: true });
+    const newBoard = board.map(row => [...row]);
+    newBoard[x][y] = get().currentPlayer;
 
-    try {
-      const result = await tauriApi.placeStone(x, y);
+    const { hasWon, line } = get().checkWinner(newBoard, x, y);
 
-      // 更新本地状态
-      const newBoard = get().board.map(row => [...row]);
-      newBoard[x][y] = get().currentPlayer;
+    const isBoardFull = newBoard.every(row => row.every(cell => cell !== null));
 
-      set({
-        board: newBoard,
-        currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
-        gameStatus: result.game_status,
-        winningLine: result.winning_line || null,
-        moveHistory: [...get().moveHistory, { x, y }],
-      });
-    } catch (error) {
-      console.error('Failed to place stone:', error);
-      alert(`落子失败: ${error}`);
-    } finally {
-      set({ isProcessing: false });
+    let newGameStatus: GameStatus = 'playing';
+    if (hasWon) {
+      newGameStatus = get().currentPlayer === 'black' ? 'black_win' : 'white_win';
+    } else if (isBoardFull) {
+      newGameStatus = 'draw';
     }
+
+    set({
+      board: newBoard,
+      currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
+      gameStatus: newGameStatus,
+      winningLine: line || null,
+      moveHistory: [...get().moveHistory, { x, y }],
+    });
   },
 
-  newGame: async () => {
-    set({ isProcessing: true });
-
-    try {
-      await tauriApi.newGame();
-      set({
-        board: Array(15).fill(null).map(() => Array(15).fill(null)),
-        currentPlayer: 'black',
-        gameStatus: 'playing',
-        moveHistory: [],
-        winningLine: null,
-      });
-    } catch (error) {
-      console.error('Failed to start new game:', error);
-    } finally {
-      set({ isProcessing: false });
-    }
+  newGame: () => {
+    set({
+      board: Array(15).fill(null).map(() => Array(15).fill(null)),
+      currentPlayer: 'black',
+      gameStatus: 'playing',
+      moveHistory: [],
+      winningLine: null,
+    });
   },
 
-  undoMove: async () => {
-    const { moveHistory } = get();
+  undoMove: () => {
+    const { moveHistory, board } = get();
     if (moveHistory.length === 0) return;
 
-    set({ isProcessing: true });
+    const lastMove = moveHistory[moveHistory.length - 1];
+    const newBoard = board.map(row => [...row]);
+    newBoard[lastMove.x][lastMove.y] = null;
 
-    try {
-      await tauriApi.undoMove();
-
-      const lastMove = moveHistory[moveHistory.length - 1];
-      const newBoard = get().board.map(row => [...row]);
-      newBoard[lastMove.x][lastMove.y] = null;
-
-      set({
-        board: newBoard,
-        currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
-        gameStatus: 'playing',
-        moveHistory: moveHistory.slice(0, -1),
-        winningLine: null,
-      });
-    } catch (error) {
-      console.error('Failed to undo move:', error);
-      alert(`悔棋失败: ${error}`);
-    } finally {
-      set({ isProcessing: false });
-    }
-  },
-
-  syncBoardState: async () => {
-    try {
-      const boardData = await tauriApi.getBoardState();
-      const board: Cell[][] = boardData.map(row =>
-        row.map(cell => {
-          if (cell === 'black') return 'black';
-          if (cell === 'white') return 'white';
-          return null;
-        })
-      );
-      set({ board });
-    } catch (error) {
-      console.error('Failed to sync board state:', error);
-    }
+    set({
+      board: newBoard,
+      currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
+      gameStatus: 'playing',
+      moveHistory: moveHistory.slice(0, -1),
+      winningLine: null,
+    });
   },
 }));
