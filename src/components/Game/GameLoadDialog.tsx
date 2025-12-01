@@ -5,7 +5,7 @@ import { tauriApi, type SavedGame } from '@/utils/tauri';
 interface GameLoadDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoad: (gameId: number) => void;
+  onLoad: (gameId: number) => Promise<void>;
 }
 
 export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps) {
@@ -26,7 +26,7 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
       setSavedGames(games);
     } catch (error) {
       console.error('Failed to load saved games:', error);
-      alert(`加载失败: ${error}`);
+      alert(`加载失败：${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -35,12 +35,11 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
   const handleLoadGame = async (gameId: number) => {
     setIsLoadingGame(gameId);
     try {
-      await tauriApi.loadGame(gameId);
-      onLoad(gameId);
+      await onLoad(gameId);
       onClose();
     } catch (error) {
       console.error('Failed to load game:', error);
-      alert(`加载失败: ${error}`);
+      alert(`加载失败：${error}`);
     } finally {
       setIsLoadingGame(null);
     }
@@ -57,7 +56,7 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
       setSavedGames(savedGames.filter(game => game.id !== gameId));
     } catch (error) {
       console.error('Failed to delete game:', error);
-      alert(`删除失败: ${error}`);
+      alert(`删除失败：${error}`);
     }
   };
 
@@ -94,9 +93,19 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[600px] max-h-[500px] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6">
+        <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">加载游戏</h2>
+        <Button
+            className='mb-4'
+            onClick={onClose}
+            variant="outline"
+          >
+            关闭
+          </Button>
+        </div>
 
+        <div className='w-[600px] max-h-[500px] overflow-y-auto'>
         {isLoading ? (
           <div className="text-center py-8">
             <div className="text-gray-500">加载中...</div>
@@ -131,16 +140,16 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium">状态:</span> {getStatusText(game.status)}
+                    <span className="font-medium">状态：</span> {getStatusText(game.status)}
                   </div>
                   <div>
-                    <span className="font-medium">步数:</span> {game.total_moves}
+                    <span className="font-medium">步数：</span> {game.total_moves}
                   </div>
                   <div>
-                    <span className="font-medium">创建:</span> {formatDate(game.created_at)}
+                    <span className="font-medium">创建：</span> {formatDate(game.created_at)}
                   </div>
                   <div>
-                    <span className="font-medium">更新:</span> {formatDate(game.updated_at)}
+                    <span className="font-medium">更新：</span> {formatDate(game.updated_at)}
                   </div>
                 </div>
                 <div className="flex justify-end mt-3">
@@ -157,13 +166,6 @@ export function GameLoadDialog({ isOpen, onClose, onLoad }: GameLoadDialogProps)
           </div>
         )}
 
-        <div className="flex justify-end mt-4">
-          <Button
-            onClick={onClose}
-            variant="outline"
-          >
-            关闭
-          </Button>
         </div>
       </div>
     </div>

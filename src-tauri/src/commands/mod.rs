@@ -319,12 +319,23 @@ pub async fn save_game(
     Ok(game_id)
 }
 
+/// 加载游戏返回结果
+#[derive(Serialize, Deserialize)]
+pub struct LoadGameResult {
+    pub board: Vec<Vec<String>>,
+    pub current_player: String,
+    pub game_status: String,
+    pub game_mode: String,
+    pub ai_difficulty: String,
+    pub move_history: Vec<Position>,
+}
+
 /// 加载游戏
 #[tauri::command]
 pub async fn load_game(
     state: State<'_, GameState>,
     game_id: i64,
-) -> Result<(), String> {
+) -> Result<LoadGameResult, String> {
     let db = state.database.lock().unwrap();
 
     // 获取游戏记录
@@ -358,44 +369,109 @@ pub async fn load_game(
     }
 
     // 恢复游戏状态
+    let current_player = if moves.len() % 2 == 0 {
+        Player::Black
+    } else {
+        Player::White
+    };
     {
-        let mut current_player = state.current_player.lock().unwrap();
-        *current_player = if moves.len() % 2 == 0 {
-            Player::Black
-        } else {
-            Player::White
-        };
+        let mut cp = state.current_player.lock().unwrap();
+        *cp = current_player;
     }
 
+    let game_status = match game.status.as_str() {
+        "in_progress" | "idle" => GameStatus::InProgress,
+        "black_win" => GameStatus::BlackWin,
+        "white_win" => GameStatus::WhiteWin,
+        "draw" => GameStatus::Draw,
+        _ => GameStatus::InProgress,
+    };
     {
-        let mut game_status = state.game_status.lock().unwrap();
-        *game_status = match game.status.as_str() {
-            "in_progress" | "idle" => GameStatus::InProgress,
-            "black_win" => GameStatus::BlackWin,
-            "white_win" => GameStatus::WhiteWin,
-            "draw" => GameStatus::Draw,
-            _ => GameStatus::InProgress,
-        };
+        let mut gs = state.game_status.lock().unwrap();
+        *gs = game_status.clone();
     }
 
+    let game_mode = match game.mode.as_str() {
+        "pvp" => GameMode::PvP,
+        "pve" => GameMode::PvE,
+        _ => GameMode::PvP,
+    };
     {
         let mut mode = state.game_mode.lock().unwrap();
-        *mode = match game.mode.as_str() {
-            "pvp" => GameMode::PvP,
-            "pve" => GameMode::PvE,
-            _ => GameMode::PvP,
-        };
+        *mode = game_mode;
     }
 
+    // 解析 AI 难度
+    let ai_difficulty = game.difficulty.as_deref().unwrap_or("medium");
+    let difficulty = match ai_difficulty {
+        "easy" => Difficulty::Easy,
+        "medium" => Difficulty::Medium,
+        "hard" => Difficulty::Hard,
+        _ => Difficulty::Medium,
+    };
+    {
+        let mut diff = state.ai_difficulty.lock().unwrap();
+        *diff = difficulty;
+    }
+
+    // 如果是 PvE 模式，初始化 AI 引擎
+    {
+        let mut ai_engine = state.ai_engine.lock().unwrap();
+        if game_mode == GameMode::PvE {
+            *ai_engine = Some(AIEngine::new(difficulty));
+        } else {
+            *ai_engine = None;
+        }
+    }
+
+    let move_history: Vec<Position> = moves.iter().map(|m| Position {
+        x: m.position_x as usize,
+        y: m.position_y as usize,
+    }).collect();
     {
         let mut history = state.move_history.lock().unwrap();
-        *history = moves.iter().map(|m| Position {
-            x: m.position_x as usize,
-            y: m.position_y as usize,
-        }).collect();
+        *history = move_history.clone();
     }
 
-    Ok(())
+    // 获取棋盘状态
+    let board_state = {
+        let board = state.board.lock().unwrap();
+        let mut result = Vec::new();
+        for x in 0..15 {
+            let mut row = Vec::new();
+            for y in 0..15 {
+                let cell = board.get(x, y).unwrap();
+                row.push(match cell {
+                    Cell::Empty => "empty".to_string(),
+                    Cell::Black => "black".to_string(),
+                    Cell::White => "white".to_string(),
+                });
+            }
+            result.push(row);
+        }
+        result
+    };
+
+    Ok(LoadGameResult {
+        board: board_state,
+        current_player: match current_player {
+            Player::Black => "black".to_string(),
+            Player::White => "white".to_string(),
+        },
+        game_status: match game_status {
+            GameStatus::InProgress => "playing".to_string(),
+            GameStatus::BlackWin => "black_win".to_string(),
+            GameStatus::WhiteWin => "white_win".to_string(),
+            GameStatus::Draw => "draw".to_string(),
+            GameStatus::Idle => "idle".to_string(),
+        },
+        game_mode: match game_mode {
+            GameMode::PvP => "pvp".to_string(),
+            GameMode::PvE => "pve".to_string(),
+        },
+        ai_difficulty: ai_difficulty.to_string(),
+        move_history,
+    })
 }
 
 /// 获取保存的游戏列表

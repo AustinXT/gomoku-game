@@ -6,7 +6,7 @@ import GameSaveDialog from '@/components/Game/GameSaveDialog';
 import { GameLoadDialog } from '@/components/Game/GameLoadDialog';
 
 const GameControls: React.FC = () => {
-  const { gameStatus, moveHistory, newGame, undoMove, isProcessing } = useGameStore();
+  const { gameStatus, moveHistory, newGame, undoMove, isProcessing, loadGame } = useGameStore();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
 
@@ -14,8 +14,8 @@ const GameControls: React.FC = () => {
     console.log('Game saved:', gameName);
   };
 
-  const handleLoadGame = (gameId: number) => {
-    console.log('Game loaded:', gameId);
+  const handleLoadGame = async (gameId: number) => {
+    await loadGame(gameId);
   };
 
   return (

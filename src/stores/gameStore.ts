@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Cell, GameStatus, Position, GameMode, Difficulty } from '@/utils/tauri';
+import type { Cell, GameStatus, Position, GameMode, Difficulty, LoadGameResult } from '@/utils/tauri';
 import { tauriApi } from '@/utils/tauri';
 
 interface ToastMessage {
@@ -26,6 +26,7 @@ interface GameState {
   undoMove: () => void;
   handleAIMove: () => Promise<void>;
   loadGameConfig: () => Promise<void>;
+  loadGame: (gameId: number) => Promise<void>;
   checkWinner: (board: Cell[][], x: number, y: number) => { hasWon: boolean; line?: Position[] };
   showToast: (message: string, type?: ToastMessage['type']) => void;
   clearToast: () => void;
@@ -250,6 +251,46 @@ export const useGameStore = create<GameState>((set, get) => ({
         gameMode: 'pvp',
         aiDifficulty: 'medium',
       });
+    }
+  },
+
+  loadGame: async (gameId: number) => {
+    set({ isProcessing: true });
+    try {
+      const result = await tauriApi.loadGame(gameId);
+      
+      // 将棋盘字符串转换为 Cell 类型
+      const newBoard: Cell[][] = result.board.map(row =>
+        row.map(cell => {
+          if (cell === 'black') return 'black';
+          if (cell === 'white') return 'white';
+          return null;
+        })
+      );
+
+      // 转换游戏状态
+      let gameStatus: GameStatus = 'playing';
+      if (result.game_status === 'black_win') gameStatus = 'black_win';
+      else if (result.game_status === 'white_win') gameStatus = 'white_win';
+      else if (result.game_status === 'draw') gameStatus = 'draw';
+      else if (result.game_status === 'idle') gameStatus = 'idle';
+
+      set({
+        board: newBoard,
+        currentPlayer: result.current_player,
+        gameStatus: gameStatus,
+        gameMode: result.game_mode,
+        aiDifficulty: result.ai_difficulty as Difficulty,
+        moveHistory: result.move_history,
+        winningLine: null,
+      });
+
+      get().showToast('游戏加载成功', 'success');
+    } catch (error) {
+      console.error('Failed to load game:', error);
+      get().showToast(`加载游戏失败: ${error}`, 'error');
+    } finally {
+      set({ isProcessing: false });
     }
   },
 

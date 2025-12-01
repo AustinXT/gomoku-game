@@ -774,8 +774,8 @@ export const tauriApi = {
     return await safeInvoke<number>('save_game', { gameName });
   },
 
-  async loadGame(gameId: number): Promise<void> {
-    return await safeInvoke('load_game', { gameId });
+  async loadGame(gameId: number): Promise<LoadGameResult> {
+    return await safeInvoke<LoadGameResult>('load_game', { gameId });
   },
 
   async listSavedGames(): Promise<SavedGame[]> {
