@@ -1,3 +1,4 @@
-// lib.rs
+pub mod commands;
+pub mod game;
 
-// 临时空文件，后续会添加模块导出
+pub use game::{Board, Player, GameStatus, Position, Cell};
