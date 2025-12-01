@@ -1,0 +1,9 @@
+[source.crates-io]
+registry = "https://github.com/rust-lang/crates.io-index"
+
+# 替换为国内镜像源（可选）
+[source.sparity]
+registry = "https://index.crates.io/"
+
+[registries.crates-io]
+protocol = "sparse"
