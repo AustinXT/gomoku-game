@@ -34,8 +34,9 @@ pub struct Move {
     pub player: Player,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum GameStatus {
+    Idle,
     InProgress,
     BlackWin,
     WhiteWin,

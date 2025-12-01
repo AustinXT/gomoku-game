@@ -42,7 +42,9 @@ impl GameState {
 
 impl Default for GameState {
     fn default() -> Self {
-        Self::new()
+        // 创建一个默认的内存数据库用于默认实例
+        let database = Database::new_in_memory().expect("Failed to create in-memory database");
+        Self::new(database)
     }
 }
 

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(pnpm:*)",
+      "Bash(rustc:*)",
+      "Bash(rustup target add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

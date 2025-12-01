@@ -1,6 +1,5 @@
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
-use chrono::Utc;
 use super::models::{SavedGame, SavedMove};
 
 pub struct Database {
@@ -11,6 +10,14 @@ impl Database {
     /// 初始化数据库
     pub fn new(db_path: PathBuf) -> Result<Self> {
         let conn = Connection::open(db_path)?;
+        let db = Database { conn };
+        db.create_tables()?;
+        Ok(db)
+    }
+
+    /// 创建内存数据库（用于测试和默认实例）
+    pub fn new_in_memory() -> Result<Self> {
+        let conn = Connection::open_in_memory()?;
         let db = Database { conn };
         db.create_tables()?;
         Ok(db)

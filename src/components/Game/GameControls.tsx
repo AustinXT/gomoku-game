@@ -4,7 +4,7 @@ import { useGameStore } from '@/stores/gameStore';
 import { Play, Undo2, Settings, Save, FolderOpen } from 'lucide-react';
 import { GameModeSelector } from '@/components/GameModeSelector';
 import GameSaveDialog from '@/components/Game/GameSaveDialog';
-import GameLoadDialog from '@/components/Game/GameLoadDialog';
+import { GameLoadDialog } from '@/components/Game/GameLoadDialog';
 
 const GameControls: React.FC = () => {
   const { gameStatus, moveHistory, newGame, undoMove, isProcessing, gameMode, aiDifficulty } = useGameStore();
