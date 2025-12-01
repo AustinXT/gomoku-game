@@ -1,5 +1,6 @@
 use tauri::State;
-use crate::{GameState, game::{Position, MoveResult, GameStatus, RulesValidator, Player}};
+use crate::GameState;
+use crate::game::{Position, MoveResult, GameStatus, RulesValidator, Player, Cell};
 
 #[tauri::command]
 pub async fn place_stone(
@@ -111,9 +112,9 @@ pub async fn get_board_state(
         for y in 0..15 {
             let cell = board.get(x, y).unwrap();
             row.push(match cell {
-                crate::game::Cell::Empty => "empty".to_string(),
-                crate::game::Cell::Black => "black".to_string(),
-                crate::game::Cell::White => "white".to_string(),
+                Cell::Empty => "empty".to_string(),
+                Cell::Black => "black".to_string(),
+                Cell::White => "white".to_string(),
             });
         }
         result.push(row);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cell as CellType } from '@/types/game';
+import type { Cell as CellType } from '@/utils/tauri';
 import { cn } from '@/lib/utils';
 
 interface CellProps {

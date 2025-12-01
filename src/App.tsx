@@ -1,4 +1,3 @@
-import React from 'react';
 import Board from '@/components/Board/Board';
 import GameControls from '@/components/Game/GameControls';
 import GameStatus from '@/components/Game/GameStatus';

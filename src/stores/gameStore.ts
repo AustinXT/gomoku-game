@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { tauriApi } from '@/utils/tauri';
-import { Cell, GameStatus, Position } from '@/types/game';
+import type { Cell, GameStatus, Position } from '@/utils/tauri';
 
 interface GameState {
   board: Cell[][];

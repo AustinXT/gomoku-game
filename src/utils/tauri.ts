@@ -1,5 +1,19 @@
 import { invoke } from '@tauri-apps/api/core';
-import { MoveResult } from '@/types/game';
+
+export type Player = 'black' | 'white';
+export type Cell = null | Player;
+export type GameStatus = 'idle' | 'playing' | 'black_win' | 'white_win' | 'draw';
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface MoveResult {
+  success: boolean;
+  game_status: GameStatus;
+  winning_line?: Position[];
+}
 
 export const tauriApi = {
   async placeStone(x: number, y: number): Promise<MoveResult> {

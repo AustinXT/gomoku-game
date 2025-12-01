@@ -1,4 +1,4 @@
-use super::types::{Cell, Player, Position};
+use super::types::{Cell, Position};
 use super::board::Board;
 
 pub struct RulesValidator;

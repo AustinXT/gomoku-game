@@ -1,4 +1,4 @@
-use super::types::{Cell, Player, Position};
+use super::types::{Cell, Player};
 
 pub struct Board {
     grid: [[Cell; 15]; 15],
