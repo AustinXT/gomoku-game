@@ -47,32 +47,29 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* 游戏模式选择 */}
-          <div className="space-y-3">
-            <Label className="text-base font-medium">游戏模式</Label>
-            <RadioGroup
-              value={selectedMode}
-              onValueChange={(value: string) => setSelectedMode(value as GameMode)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pvp" id="pvp" />
-                <Label htmlFor="pvp" className="cursor-pointer">
-                  <div>
-                    <div className="font-medium">双人对战</div>
-                    <div className="text-sm text-gray-500">两位玩家轮流落子</div>
-                  </div>
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pve" id="pve" />
-                <Label htmlFor="pve" className="cursor-pointer">
-                  <div>
-                    <div className="font-medium">人机对战</div>
-                    <div className="text-sm text-gray-500">与AI对战</div>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+          <RadioGroup
+            value={selectedMode}
+            onValueChange={(value: string) => setSelectedMode(value as GameMode)}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="pvp" id="pvp" />
+              <Label htmlFor="pvp" className="cursor-pointer">
+                <div>
+                  <div className="font-medium">双人对战</div>
+                  <div className="text-sm text-gray-500">两位玩家轮流落子</div>
+                </div>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="pve" id="pve" />
+              <Label htmlFor="pve" className="cursor-pointer">
+                <div>
+                  <div className="font-medium">人机对战</div>
+                  <div className="text-sm text-gray-500">与AI对战</div>
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
 
           {/* AI难度选择 */}
           {selectedMode === 'pve' && (
