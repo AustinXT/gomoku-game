@@ -39,7 +39,12 @@ export const useGameStore = create<GameState>((set) => ({
     });
   },
 
-  resetGame: () => set((state) => {
-    state.initBoard();
-  }),
+  resetGame: () => {
+    set({
+      board: Array(15).fill(null).map(() => Array(15).fill(null)),
+      moveHistory: [],
+      currentPlayer: 'black',
+      gameStatus: 'playing',
+    });
+  },
 }));
