@@ -82,7 +82,7 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
                   <Label htmlFor="easy" className="cursor-pointer">
                     <div>
                       <div className="font-medium">简单</div>
-                      <div className="text-sm text-gray-500">适合初学者</div>
+                      <div className="text-sm text-gray-500">会犯错误，防守不完美</div>
                     </div>
                   </Label>
                 </div>
@@ -91,7 +91,7 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
                   <Label htmlFor="medium" className="cursor-pointer">
                     <div>
                       <div className="font-medium">中等</div>
-                      <div className="text-sm text-gray-500">适合有经验的玩家</div>
+                      <div className="text-sm text-gray-500">识别棋型，有攻防意识</div>
                     </div>
                   </Label>
                 </div>
@@ -100,7 +100,7 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
                   <Label htmlFor="hard" className="cursor-pointer">
                     <div>
                       <div className="font-medium">困难</div>
-                      <div className="text-sm text-gray-500">适合高级玩家</div>
+                      <div className="text-sm text-gray-500">使用搜索算法，具有预判能力</div>
                     </div>
                   </Label>
                 </div>
