@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Player {
     Black,
     White,
@@ -35,8 +36,10 @@ pub struct Move {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum GameStatus {
     Idle,
+    #[serde(rename = "playing")]
     InProgress,
     BlackWin,
     WhiteWin,
@@ -48,6 +51,7 @@ pub struct MoveResult {
     pub success: bool,
     pub game_status: GameStatus,
     pub winning_line: Option<Vec<Position>>,
+    pub next_player: Player,
 }
 
 /// 游戏模式

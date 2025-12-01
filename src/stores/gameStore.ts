@@ -80,19 +80,25 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   placeStone: async (x: number, y: number) => {
-    const { isProcessing, gameStatus, board, showToast, gameMode } = get();
+    const { isProcessing, gameStatus, board, showToast, gameMode, currentPlayer } = get();
+
+    console.log('placeStone called:', { x, y, currentPlayer, gameMode, isProcessing, gameStatus });
+    console.log('Board state before move:', board.map(row => row.map(cell => cell || 'empty')));
 
     if (isProcessing) {
+      console.log('Processing - blocking move');
       showToast('请等待当前操作完成', 'error');
       return;
     }
 
     if (gameStatus !== 'playing') {
+      console.log('Game not playing - blocking move');
       showToast('游戏已结束，请开始新游戏', 'error');
       return;
     }
 
     if (board[x][y] !== null) {
+      console.log('Cell occupied - blocking move');
       showToast('该位置已有棋子', 'error');
       return;
     }
@@ -107,9 +113,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         return;
       }
 
-      // Update board state
+      // Update board state - 使用当前落子的玩家
       const newBoard = board.map(row => [...row]);
-      newBoard[x][y] = get().currentPlayer;
+      newBoard[x][y] = currentPlayer;
 
       let newGameStatus: GameStatus = result.game_status;
       if (result.game_status === 'black_win' || result.game_status === 'white_win') {
@@ -120,14 +126,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       set({
         board: newBoard,
-        currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
+        currentPlayer: result.next_player,
         gameStatus: newGameStatus,
         winningLine: result.winning_line || null,
         moveHistory: [...get().moveHistory, { x, y }],
       });
 
-      // Trigger AI move if in PvE mode and game is still ongoing
-      if (gameMode === 'pve' && newGameStatus === 'playing' && get().currentPlayer === 'white') {
+      // Trigger AI move if in PvE mode and game is still ongoing and it's AI's turn
+      if (gameMode === 'pve' && newGameStatus === 'playing') {
         setTimeout(() => get().handleAIMove(), 500);
       }
 
@@ -216,7 +222,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       set({
         board: newBoard,
-        currentPlayer: 'black',
+        currentPlayer: result.next_player,
         gameStatus: newGameStatus,
         winningLine: result.winning_line || null,
         moveHistory: [...get().moveHistory, { x: aiMove.x, y: aiMove.y }],
@@ -239,6 +245,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to load game config:', error);
+      // 使用默认配置
+      set({
+        gameMode: 'pvp',
+        aiDifficulty: 'medium',
+      });
     }
   },
 

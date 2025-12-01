@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/stores/gameStore';
-import { Play, Undo2, Settings, Save, FolderOpen } from 'lucide-react';
-import { GameModeSelector } from '@/components/GameModeSelector';
+import { Play, Undo2, Save, FolderOpen } from 'lucide-react';
 import GameSaveDialog from '@/components/Game/GameSaveDialog';
 import { GameLoadDialog } from '@/components/Game/GameLoadDialog';
 
 const GameControls: React.FC = () => {
-  const { gameStatus, moveHistory, newGame, undoMove, isProcessing, gameMode, aiDifficulty } = useGameStore();
-  const [showModeSelector, setShowModeSelector] = useState(false);
+  const { gameStatus, moveHistory, newGame, undoMove, isProcessing } = useGameStore();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
 
@@ -25,26 +23,7 @@ const GameControls: React.FC = () => {
       <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow-md">
         <h2 className="text-lg font-semibold text-gray-800">游戏控制</h2>
 
-        {/* 游戏模式显示 */}
-        <div className="text-sm text-gray-600">
-          <div className="font-medium">当前模式:</div>
-          <div className="capitalize">
-            {gameMode === 'pvp' ? '双人对战' : '人机对战'}
-            {gameMode === 'pve' && ` (${aiDifficulty === 'easy' ? '简单' : aiDifficulty === 'medium' ? '中等' : '困难'})`}
-          </div>
-        </div>
-
         <div className="flex flex-col gap-2">
-          <Button
-            onClick={() => setShowModeSelector(true)}
-            disabled={isProcessing}
-            className="w-full"
-            variant="outline"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            游戏设置
-          </Button>
-
           <Button
             onClick={() => setShowSaveDialog(true)}
             disabled={isProcessing || gameStatus === 'idle'}
@@ -86,11 +65,6 @@ const GameControls: React.FC = () => {
           </Button>
         </div>
       </div>
-
-      <GameModeSelector
-        isOpen={showModeSelector}
-        onClose={() => setShowModeSelector(false)}
-      />
 
       <GameSaveDialog
         isOpen={showSaveDialog}

@@ -20,6 +20,8 @@ pub async fn place_stone(
         *player
     };
 
+    println!("Backend place_stone called: x={}, y={}, current_player={:?}", x, y, current_player);
+
     // 2. 尝试落子
     {
         let mut board = state.board.lock().unwrap();
@@ -58,15 +60,18 @@ pub async fn place_stone(
         history.push(position);
     }
 
-    {
+    // 获取下一个玩家（切换当前玩家）
+    let next_player = {
         let mut player = state.current_player.lock().unwrap();
         *player = current_player.opponent();
-    }
+        *player
+    };
 
     Ok(MoveResult {
         success: true,
         game_status,
         winning_line,
+        next_player,
     })
 }
 
