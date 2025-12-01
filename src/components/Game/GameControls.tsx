@@ -25,6 +25,28 @@ const GameControls: React.FC = () => {
 
         <div className="flex flex-col gap-2">
           <Button
+            onClick={newGame}
+            disabled={isProcessing}
+            className="w-full"
+            variant="default"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            {gameStatus === 'idle' ? '开始游戏' : '新游戏'}
+          </Button>
+
+          <Button
+            onClick={undoMove}
+            disabled={isProcessing || moveHistory.length === 0 || gameStatus !== 'playing'}
+            className="w-full"
+            variant="outline"
+          >
+            <Undo2 className="w-4 h-4 mr-2" />
+            悔棋
+          </Button>
+
+          <hr className="border-gray-200 my-1" />
+
+          <Button
             onClick={() => setShowSaveDialog(true)}
             disabled={isProcessing || gameStatus === 'idle'}
             className="w-full"
@@ -44,25 +66,6 @@ const GameControls: React.FC = () => {
             加载游戏
           </Button>
 
-          <Button
-            onClick={newGame}
-            disabled={isProcessing}
-            className="w-full"
-            variant="default"
-          >
-            <Play className="w-4 h-4 mr-2" />
-            {gameStatus === 'idle' ? '开始游戏' : '新游戏'}
-          </Button>
-
-          <Button
-            onClick={undoMove}
-            disabled={isProcessing || moveHistory.length === 0 || gameStatus !== 'playing'}
-            className="w-full"
-            variant="outline"
-          >
-            <Undo2 className="w-4 h-4 mr-2" />
-            悔棋
-          </Button>
         </div>
       </div>
 

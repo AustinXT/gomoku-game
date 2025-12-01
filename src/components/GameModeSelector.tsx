@@ -42,7 +42,7 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
         <CardHeader>
           <CardTitle>游戏设置</CardTitle>
           <CardDescription>
-            选择游戏模式和AI难度级别
+            选择游戏模式和 AI 难度级别
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -56,7 +56,6 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
               <Label htmlFor="pvp" className="cursor-pointer">
                 <div>
                   <div className="font-medium">双人对战</div>
-                  <div className="text-sm text-gray-500">两位玩家轮流落子</div>
                 </div>
               </Label>
             </div>
@@ -65,16 +64,15 @@ export function GameModeSelector({ isOpen, onClose }: GameModeSelectorProps) {
               <Label htmlFor="pve" className="cursor-pointer">
                 <div>
                   <div className="font-medium">人机对战</div>
-                  <div className="text-sm text-gray-500">与AI对战</div>
                 </div>
               </Label>
             </div>
           </RadioGroup>
 
-          {/* AI难度选择 */}
+          {/* AI 难度选择 */}
           {selectedMode === 'pve' && (
             <div className="space-y-3">
-              <Label className="text-base font-medium">AI难度</Label>
+              <Label className="text-base font-medium">AI 难度</Label>
               <RadioGroup
                 value={selectedDifficulty}
                 onValueChange={(value: string) => setSelectedDifficulty(value as Difficulty)}

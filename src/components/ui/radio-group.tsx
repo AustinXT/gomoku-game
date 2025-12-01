@@ -1,32 +1,40 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
+interface RadioGroupContextValue {
+  value?: string
+  name: string
+  onValueChange?: (value: string) => void
+  disabled?: boolean
+}
+
+const RadioGroupContext = React.createContext<RadioGroupContextValue | null>(null)
+
 interface RadioGroupProps {
   value?: string
   onValueChange?: (value: string) => void
   className?: string
   children: React.ReactNode
+  disabled?: boolean
 }
 
+let radioGroupCounter = 0
+
 const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
-  ({ value, onValueChange, className, children, ...props }, ref) => {
+  ({ value, onValueChange, className, children, disabled, ...props }, ref) => {
+    const nameRef = React.useRef(`radio-group-${++radioGroupCounter}`)
+    
     return (
-      <div
-        ref={ref}
-        className={cn("grid gap-2", className)}
-        {...props}
-      >
-        {React.Children.map(children, (child) => {
-          if (React.isValidElement(child) && child.type === RadioGroupItem) {
-            const childProps = child.props as RadioGroupItemProps;
-            return React.cloneElement(child, {
-              checked: childProps.value === value,
-              onChange: () => onValueChange?.(childProps.value),
-            } as any)
-          }
-          return child
-        })}
-      </div>
+      <RadioGroupContext.Provider value={{ value, name: nameRef.current, onValueChange, disabled }}>
+        <div
+          ref={ref}
+          role="radiogroup"
+          className={cn("grid gap-2", className)}
+          {...props}
+        >
+          {children}
+        </div>
+      </RadioGroupContext.Provider>
     )
   }
 )
@@ -35,29 +43,37 @@ RadioGroup.displayName = "RadioGroup"
 interface RadioGroupItemProps {
   value: string
   id: string
-  checked?: boolean
-  onChange?: () => void
   className?: string
+  disabled?: boolean
 }
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
-  ({ value, id, checked, onChange, className, ...props }, ref) => {
+  ({ value, id, className, disabled: itemDisabled, ...props }, ref) => {
+    const context = React.useContext(RadioGroupContext)
+    
+    if (!context) {
+      throw new Error("RadioGroupItem must be used within a RadioGroup")
+    }
+    
+    const { value: selectedValue, name, onValueChange, disabled: groupDisabled } = context
+    const isDisabled = itemDisabled || groupDisabled
+    
     return (
-      <div className="flex items-center space-x-2">
-        <input
-          ref={ref}
-          type="radio"
-          id={id}
-          value={value}
-          checked={checked}
-          onChange={onChange}
-          className={cn(
-            "aspect-square h-4 w-4 rounded-full border border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            className
-          )}
-          {...props}
-        />
-      </div>
+      <input
+        ref={ref}
+        type="radio"
+        id={id}
+        name={name}
+        value={value}
+        checked={selectedValue === value}
+        onChange={() => onValueChange?.(value)}
+        disabled={isDisabled}
+        className={cn(
+          "aspect-square h-4 w-4 rounded-full border border-gray-300 text-primary accent-blue-600 focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        {...props}
+      />
     )
   }
 )
