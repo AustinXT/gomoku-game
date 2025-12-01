@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/stores/gameStore';
-import { RotateCcw, Play, Undo2 } from 'lucide-react';
+import { Play, Undo2 } from 'lucide-react';
 
 const GameControls: React.FC = () => {
   const { gameStatus, moveHistory, newGame, undoMove, isProcessing } = useGameStore();
@@ -31,15 +31,7 @@ const GameControls: React.FC = () => {
           悔棋
         </Button>
 
-        <Button
-          onClick={() => window.location.reload()}
-          className="w-full"
-          variant="ghost"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          重置应用
-        </Button>
-      </div>
+        </div>
     </div>
   );
 };
