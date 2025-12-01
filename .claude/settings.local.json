@@ -4,7 +4,10 @@
       "Bash(node --version:*)",
       "Bash(pnpm:*)",
       "Bash(rustc:*)",
-      "Bash(rustup target add:*)"
+      "Bash(rustup target add:*)",
+      "Bash(lipo -info:*)",
+      "Bash(chmod:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
