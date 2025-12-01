@@ -1,8 +1,10 @@
+pub mod ai;
 pub mod commands;
 pub mod game;
 
 use std::sync::Mutex;
-pub use game::{Board, Player, GameStatus, Position, Cell};
+pub use game::{Board, Player, GameStatus, Position, Cell, GameMode};
+pub use ai::{AIEngine, Difficulty, PatternEvaluator, MinimaxSolver, Pattern};
 
 // GameState for managing game state across Tauri commands
 pub struct GameState {
@@ -10,6 +12,11 @@ pub struct GameState {
     pub current_player: Mutex<Player>,
     pub game_status: Mutex<GameStatus>,
     pub move_history: Mutex<Vec<Position>>,
+
+    // 新增字段
+    pub game_mode: Mutex<GameMode>,
+    pub ai_difficulty: Mutex<Difficulty>,
+    pub ai_engine: Mutex<Option<AIEngine>>,
 }
 
 impl GameState {
@@ -19,6 +26,9 @@ impl GameState {
             current_player: Mutex::new(Player::Black),
             game_status: Mutex::new(GameStatus::InProgress),
             move_history: Mutex::new(Vec::new()),
+            game_mode: Mutex::new(GameMode::PvP),
+            ai_difficulty: Mutex::new(Difficulty::Medium),
+            ai_engine: Mutex::new(None),
         }
     }
 }
@@ -38,6 +48,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::place_stone,
             commands::new_game,
+            commands::new_game_with_mode,
+            commands::get_ai_move,
+            commands::get_game_config,
             commands::undo_move,
             commands::get_board_state,
         ])

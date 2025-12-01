@@ -1,5 +1,6 @@
 use super::types::{Cell, Player};
 
+#[derive(Clone)]
 pub struct Board {
     grid: [[Cell; 15]; 15],
     size: usize,

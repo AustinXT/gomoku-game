@@ -48,3 +48,13 @@ pub struct MoveResult {
     pub game_status: GameStatus,
     pub winning_line: Option<Vec<Position>>,
 }
+
+/// 游戏模式
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum GameMode {
+    PvP,  // 玩家 vs 玩家
+    PvE,  // 玩家 vs AI
+}
+
+/// AI 难度（从 ai 模块导出）
+pub use crate::ai::Difficulty;
