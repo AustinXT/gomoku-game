@@ -1,10 +1,12 @@
 use tauri::State;
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
 
 use crate::GameState;
 use crate::game::{Position, MoveResult, GameStatus, RulesValidator, Player, Cell};
 use crate::ai::{AIEngine, Difficulty};
 use crate::game::GameMode;
+use crate::storage::{SavedGame, SavedMove};
 
 #[tauri::command]
 pub async fn place_stone(
@@ -191,7 +193,7 @@ pub async fn get_ai_move(
 
     if let Some(engine) = ai_engine.as_ref() {
         engine
-            .get_best_move(&board, current_player)
+            .get_best_move(&board, *current_player)
             .ok_or_else(|| "AI failed to find a move".to_string())
     } else {
         Err("AI engine not initialized".to_string())
@@ -242,4 +244,172 @@ pub async fn get_board_state(
     }
 
     Ok(result)
+}
+
+/// 保存当前游戏
+#[tauri::command]
+pub async fn save_game(
+    state: State<'_, GameState>,
+    game_name: String,
+) -> Result<i64, String> {
+    let game_mode = *state.game_mode.lock().unwrap();
+    let difficulty = *state.ai_difficulty.lock().unwrap();
+    let game_status = *state.game_status.lock().unwrap();
+    let move_history = state.move_history.lock().unwrap().clone();
+
+    let status_str = match game_status {
+        GameStatus::InProgress => "in_progress",
+        GameStatus::BlackWin => "black_win",
+        GameStatus::WhiteWin => "white_win",
+        GameStatus::Draw => "draw",
+        GameStatus::Idle => "idle",
+    }.to_string();
+
+    let winner = match game_status {
+        GameStatus::BlackWin => Some("black".to_string()),
+        GameStatus::WhiteWin => Some("white".to_string()),
+        GameStatus::Draw => Some("draw".to_string()),
+        _ => None,
+    };
+
+    let saved_game = SavedGame {
+        id: None,
+        name: game_name,
+        mode: match game_mode {
+            GameMode::PvP => "pvp".to_string(),
+            GameMode::PvE => "pve".to_string(),
+        },
+        difficulty: Some(match difficulty {
+            Difficulty::Easy => "easy".to_string(),
+            Difficulty::Medium => "medium".to_string(),
+            Difficulty::Hard => "hard".to_string(),
+        }),
+        created_at: Utc::now().timestamp(),
+        updated_at: Utc::now().timestamp(),
+        status: status_str,
+        winner,
+        total_moves: move_history.len() as i32,
+    };
+
+    let db = state.database.lock().unwrap();
+    let game_id = db.save_game(&saved_game)
+        .map_err(|e| format!("Failed to save game: {}", e))?;
+
+    // 保存所有落子记录
+    for (index, pos) in move_history.iter().enumerate() {
+        let player = if index % 2 == 0 { "black" } else { "white" };
+        let saved_move = SavedMove {
+            id: None,
+            game_id,
+            move_number: (index + 1) as i32,
+            player: player.to_string(),
+            position_x: pos.x as i32,
+            position_y: pos.y as i32,
+            timestamp: Utc::now().timestamp(),
+        };
+        db.save_move(&saved_move)
+            .map_err(|e| format!("Failed to save move: {}", e))?;
+    }
+
+    Ok(game_id)
+}
+
+/// 加载游戏
+#[tauri::command]
+pub async fn load_game(
+    state: State<'_, GameState>,
+    game_id: i64,
+) -> Result<(), String> {
+    let db = state.database.lock().unwrap();
+
+    // 获取游戏记录
+    let games = db.list_games()
+        .map_err(|e| format!("Failed to load games: {}", e))?;
+    let game = games.into_iter()
+        .find(|g| g.id == Some(game_id))
+        .ok_or("Game not found".to_string())?;
+
+    // 获取落子记录
+    let moves = db.get_moves(game_id)
+        .map_err(|e| format!("Failed to load moves: {}", e))?;
+
+    // 重置棋盘
+    {
+        let mut board = state.board.lock().unwrap();
+        board.clear();
+    }
+
+    // 重新下所有的棋子
+    for move_data in &moves {
+        let player = match move_data.player.as_str() {
+            "black" => Player::Black,
+            "white" => Player::White,
+            _ => continue,
+        };
+
+        let mut board = state.board.lock().unwrap();
+        board.set(move_data.position_x as usize, move_data.position_y as usize, player)
+            .map_err(|e| format!("Failed to replay move: {}", e))?;
+    }
+
+    // 恢复游戏状态
+    {
+        let mut current_player = state.current_player.lock().unwrap();
+        *current_player = if moves.len() % 2 == 0 {
+            Player::Black
+        } else {
+            Player::White
+        };
+    }
+
+    {
+        let mut game_status = state.game_status.lock().unwrap();
+        *game_status = match game.status.as_str() {
+            "in_progress" | "idle" => GameStatus::InProgress,
+            "black_win" => GameStatus::BlackWin,
+            "white_win" => GameStatus::WhiteWin,
+            "draw" => GameStatus::Draw,
+            _ => GameStatus::InProgress,
+        };
+    }
+
+    {
+        let mut mode = state.game_mode.lock().unwrap();
+        *mode = match game.mode.as_str() {
+            "pvp" => GameMode::PvP,
+            "pve" => GameMode::PvE,
+            _ => GameMode::PvP,
+        };
+    }
+
+    {
+        let mut history = state.move_history.lock().unwrap();
+        *history = moves.iter().map(|m| Position {
+            x: m.position_x as usize,
+            y: m.position_y as usize,
+        }).collect();
+    }
+
+    Ok(())
+}
+
+/// 获取保存的游戏列表
+#[tauri::command]
+pub async fn list_saved_games(
+    state: State<'_, GameState>,
+) -> Result<Vec<SavedGame>, String> {
+    let db = state.database.lock().unwrap();
+    db.list_games()
+        .map_err(|e| format!("Failed to list games: {}", e))
+}
+
+/// 删除保存的游戏
+#[tauri::command]
+pub async fn delete_saved_game(
+    state: State<'_, GameState>,
+    game_id: i64,
+) -> Result<(), String> {
+    let db = state.database.lock().unwrap();
+    db.delete_game(game_id)
+        .map_err(|e| format!("Failed to delete game: {}", e))
 }

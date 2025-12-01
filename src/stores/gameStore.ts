@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Cell, GameStatus, Position } from '@/utils/tauri';
+import type { Cell, GameStatus, Position, GameMode, Difficulty } from '@/utils/tauri';
+import { tauriApi } from '@/utils/tauri';
 
 interface ToastMessage {
   id: string;
@@ -11,6 +12,8 @@ interface GameState {
   board: Cell[][];
   currentPlayer: 'black' | 'white';
   gameStatus: GameStatus;
+  gameMode: GameMode;
+  aiDifficulty: Difficulty;
   moveHistory: Array<{ x: number; y: number }>;
   winningLine: Position[] | null;
   isProcessing: boolean;
@@ -19,7 +22,10 @@ interface GameState {
   // Actions
   placeStone: (x: number, y: number) => void;
   newGame: () => void;
+  newGameWithMode: (mode: GameMode, difficulty?: Difficulty) => Promise<void>;
   undoMove: () => void;
+  handleAIMove: () => Promise<void>;
+  loadGameConfig: () => Promise<void>;
   checkWinner: (board: Cell[][], x: number, y: number) => { hasWon: boolean; line?: Position[] };
   showToast: (message: string, type?: ToastMessage['type']) => void;
   clearToast: () => void;
@@ -28,7 +34,9 @@ interface GameState {
 export const useGameStore = create<GameState>((set, get) => ({
   board: Array(15).fill(null).map(() => Array(15).fill(null)),
   currentPlayer: 'black',
-  gameStatus: 'idle',
+  gameStatus: 'playing',
+  gameMode: 'pvp',
+  aiDifficulty: 'medium',
   moveHistory: [],
   winningLine: null,
   isProcessing: false,
@@ -71,8 +79,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { hasWon: false };
   },
 
-  placeStone: (x: number, y: number) => {
-    const { isProcessing, gameStatus, board, showToast } = get();
+  placeStone: async (x: number, y: number) => {
+    const { isProcessing, gameStatus, board, showToast, gameMode } = get();
 
     if (isProcessing) {
       showToast('请等待当前操作完成', 'error');
@@ -89,40 +97,149 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
-    const newBoard = board.map(row => [...row]);
-    newBoard[x][y] = get().currentPlayer;
+    set({ isProcessing: true });
 
-    const { hasWon, line } = get().checkWinner(newBoard, x, y);
+    try {
+      const result = await tauriApi.placeStone(x, y);
 
-    const isBoardFull = newBoard.every(row => row.every(cell => cell !== null));
+      if (!result.success) {
+        showToast('落子失败', 'error');
+        return;
+      }
 
-    let newGameStatus: GameStatus = 'playing';
-    if (hasWon) {
-      newGameStatus = get().currentPlayer === 'black' ? 'black_win' : 'white_win';
-      showToast(`${get().currentPlayer === 'black' ? '黑棋' : '白棋'}获胜！`, 'success');
-    } else if (isBoardFull) {
-      newGameStatus = 'draw';
-      showToast('平局！', 'info');
+      // Update board state
+      const newBoard = board.map(row => [...row]);
+      newBoard[x][y] = get().currentPlayer;
+
+      let newGameStatus: GameStatus = result.game_status;
+      if (result.game_status === 'black_win' || result.game_status === 'white_win') {
+        showToast(`${get().currentPlayer === 'black' ? '黑棋' : '白棋'}获胜！`, 'success');
+      } else if (result.game_status === 'draw') {
+        showToast('平局！', 'info');
+      }
+
+      set({
+        board: newBoard,
+        currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
+        gameStatus: newGameStatus,
+        winningLine: result.winning_line || null,
+        moveHistory: [...get().moveHistory, { x, y }],
+      });
+
+      // Trigger AI move if in PvE mode and game is still ongoing
+      if (gameMode === 'pve' && newGameStatus === 'playing' && get().currentPlayer === 'white') {
+        setTimeout(() => get().handleAIMove(), 500);
+      }
+
+    } catch (error) {
+      console.error('Failed to place stone:', error);
+      showToast('落子失败', 'error');
+    } finally {
+      set({ isProcessing: false });
     }
-
-    set({
-      board: newBoard,
-      currentPlayer: get().currentPlayer === 'black' ? 'white' : 'black',
-      gameStatus: newGameStatus,
-      winningLine: line || null,
-      moveHistory: [...get().moveHistory, { x, y }],
-    });
   },
 
-  newGame: () => {
-    set({
-      board: Array(15).fill(null).map(() => Array(15).fill(null)),
-      currentPlayer: 'black',
-      gameStatus: 'playing',
-      moveHistory: [],
-      winningLine: null,
-    });
-    get().showToast('新游戏已开始', 'success');
+  newGame: async () => {
+    set({ isProcessing: true });
+    try {
+      await tauriApi.newGame();
+      set({
+        board: Array(15).fill(null).map(() => Array(15).fill(null)),
+        currentPlayer: 'black',
+        gameStatus: 'playing',
+        moveHistory: [],
+        winningLine: null,
+      });
+      get().showToast('新游戏已开始', 'success');
+    } catch (error) {
+      console.error('Failed to start new game:', error);
+      get().showToast('新游戏启动失败', 'error');
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  newGameWithMode: async (mode: GameMode, difficulty?: Difficulty) => {
+    set({ isProcessing: true });
+    try {
+      await tauriApi.newGameWithMode(mode, difficulty);
+      set({
+        board: Array(15).fill(null).map(() => Array(15).fill(null)),
+        currentPlayer: 'black',
+        gameStatus: 'playing',
+        gameMode: mode,
+        aiDifficulty: difficulty || 'medium',
+        moveHistory: [],
+        winningLine: null,
+      });
+      get().showToast(`新游戏已开始 (${mode === 'pvp' ? '双人对战' : '人机对战'})`, 'success');
+    } catch (error) {
+      console.error('Failed to start new game with mode:', error);
+      get().showToast('新游戏启动失败', 'error');
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  handleAIMove: async () => {
+    const { isProcessing, gameStatus, gameMode, currentPlayer } = get();
+
+    if (isProcessing || gameStatus !== 'playing' || gameMode !== 'pve' || currentPlayer !== 'white') {
+      return;
+    }
+
+    set({ isProcessing: true });
+
+    try {
+      const aiMove = await tauriApi.getAIMove();
+      if (!aiMove) {
+        get().showToast('AI无法找到有效落子位置', 'error');
+        return;
+      }
+
+      const result = await tauriApi.placeStone(aiMove.x, aiMove.y);
+      if (!result.success) {
+        get().showToast('AI落子失败', 'error');
+        return;
+      }
+
+      const { board } = get();
+      const newBoard = board.map(row => [...row]);
+      newBoard[aiMove.x][aiMove.y] = 'white';
+
+      let newGameStatus: GameStatus = result.game_status;
+      if (result.game_status === 'black_win' || result.game_status === 'white_win') {
+        get().showToast('AI获胜！', 'success');
+      } else if (result.game_status === 'draw') {
+        get().showToast('平局！', 'info');
+      }
+
+      set({
+        board: newBoard,
+        currentPlayer: 'black',
+        gameStatus: newGameStatus,
+        winningLine: result.winning_line || null,
+        moveHistory: [...get().moveHistory, { x: aiMove.x, y: aiMove.y }],
+      });
+
+    } catch (error) {
+      console.error('Failed to handle AI move:', error);
+      get().showToast('AI落子失败', 'error');
+    } finally {
+      set({ isProcessing: false });
+    }
+  },
+
+  loadGameConfig: async () => {
+    try {
+      const config = await tauriApi.getGameConfig();
+      set({
+        gameMode: config.mode as GameMode,
+        aiDifficulty: config.difficulty as Difficulty,
+      });
+    } catch (error) {
+      console.error('Failed to load game config:', error);
+    }
   },
 
   undoMove: () => {

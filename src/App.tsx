@@ -1,16 +1,23 @@
+import { useEffect } from 'react';
 import Board from "@/components/Board/Board";
 import GameControls from "@/components/Game/GameControls";
 import GameStatus from "@/components/Game/GameStatus";
 import Toast from "@/components/ui/Toast";
+import { useGameStore } from '@/stores/gameStore';
 
 function App() {
+  const { loadGameConfig } = useGameStore();
+
+  useEffect(() => {
+    loadGameConfig();
+  }, [loadGameConfig]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
       <div className="container mx-auto py-8">
         {/* 标题 */}
         <header className="text-center">
           <h1 className="text-4xl font-bold text-gray-800">五子棋</h1>
-          <p className="text-gray-600 mt-2">双人对弈 · 五子连珠</p>
+          <p className="text-gray-600 mt-2">双人对弈 · 人机对战 · 五子连珠</p>
         </header>
 
         {/* 主内容区 */}
