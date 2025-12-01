@@ -1,50 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import Board from '@/components/Board/Board';
+import GameControls from '@/components/Game/GameControls';
+import GameStatus from '@/components/Game/GameStatus';
+import MoveHistory from '@/components/Game/MoveHistory';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
+      <div className="container mx-auto py-8">
+        {/* 标题 */}
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800">五子棋</h1>
+          <p className="text-gray-600 mt-2">双人对弈 · 五子连珠</p>
+        </header>
 
-      {/* Tailwind CSS Test Section */}
-      <div className="mt-8 p-6 bg-blue-100 dark:bg-blue-900 rounded-lg">
-        <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-200 mb-4">
-          Tailwind CSS 测试
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-red-500 text-white p-4 rounded text-center">红色</div>
-          <div className="bg-green-500 text-white p-4 rounded text-center">绿色</div>
-          <div className="bg-blue-500 text-white p-4 rounded text-center">蓝色</div>
+        {/* 主内容区 */}
+        <div className="flex gap-8 items-start justify-center">
+          {/* 左侧：棋盘 */}
+          <div className="flex-shrink-0">
+            <Board />
+          </div>
+
+          {/* 右侧：信息面板 */}
+          <div className="flex flex-col gap-4 w-64">
+            <GameStatus />
+            <GameControls />
+            <MoveHistory />
+          </div>
         </div>
-        <button className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-          测试按钮
-        </button>
       </div>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
