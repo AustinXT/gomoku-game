@@ -1,73 +1,203 @@
-# React + TypeScript + Vite
+# 🎮 五子棋 (Gomoku)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一款基于 Tauri 2.0 开发的五子棋桌面应用，支持人人对弈和人机对弈，采用 Minimax + Alpha-Beta 剪枝算法实现 AI 对手。
 
-Currently, two official plugins are available:
+![五子棋](https://img.shields.io/badge/Platform-macOS-blue?logo=apple)
+![Tauri](https://img.shields.io/badge/Framework-Tauri%202.0-yellow?logo=tauri)
+![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?logo=react)
+![Rust](https://img.shields.io/badge/Backend-Rust-orange?logo=rust)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ 功能特性
 
-## React Compiler
+### 游戏模式
+- 🎯 **人人对弈 (PvP)** - 两人轮流下棋
+- 🤖 **人机对弈 (PvE)** - 与 AI 对战，支持三个难度级别：
+  - 🟢 简单 - 适合初学者
+  - 🟡 中等 - 适合有一定基础的玩家
+  - 🔴 困难 - 具有挑战性的 AI 对手
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 核心功能
+- ⬅️ **悔棋/重做** - 支持撤销和恢复操作
+- 💾 **保存/加载** - 保存游戏进度，随时继续
+- 📜 **历史记录** - 查看对弈历史
+- 🎬 **棋谱回放** - 回顾精彩对局
 
-## Expanding the ESLint configuration
+### 游戏规则
+- 📐 标准 15×15 棋盘
+- ⚫ 黑棋先行
+- 🏆 五子连珠即可获胜（横、竖、斜方向）
+- 🎲 自由规则（无禁手限制）
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ 技术栈
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| 层级 | 技术 |
+|------|------|
+| **框架** | [Tauri 2.0](https://tauri.app/) |
+| **前端** | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
+| **样式** | [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) |
+| **状态管理** | [Zustand](https://zustand-demo.pmnd.rs/) |
+| **后端** | [Rust](https://www.rust-lang.org/) |
+| **构建工具** | [Vite](https://vite.dev/) |
+| **AI 算法** | Minimax + Alpha-Beta 剪枝 |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🚀 快速开始
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 环境要求
+
+确保您的系统已安装以下工具：
+
+- **Node.js** ≥ 18.x
+- **pnpm** ≥ 8.x
+- **Rust** ≥ 1.70
+- **Xcode Command Line Tools** (macOS)
+
+### 安装步骤
+
+```bash
+# 1. 克隆项目
+git clone <repository-url>
+cd gomoku-game
+
+# 2. 安装依赖
+pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 开发模式
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 启动开发服务器（带热更新）
+pnpm tauri dev
 ```
+
+### 生产构建
+
+```bash
+# 构建 macOS 应用
+pnpm tauri build
+
+# 构建通用二进制 (Intel + Apple Silicon)
+pnpm tauri build --target universal-apple-darwin
+```
+
+构建产物位置：
+- `.app` 应用包：`src-tauri/target/release/bundle/macos/`
+- `.dmg` 安装包：`src-tauri/target/release/bundle/dmg/`
+
+## 📁 项目结构
+
+```
+gomoku-game/
+├── src/                     # 前端源码
+│   ├── components/          # React 组件
+│   │   ├── Board/          # 棋盘组件
+│   │   ├── Game/           # 游戏控制组件
+│   │   └── ui/             # UI 基础组件
+│   ├── stores/             # Zustand 状态管理
+│   ├── types/              # TypeScript 类型定义
+│   └── utils/              # 工具函数
+├── src-tauri/              # Rust 后端
+│   ├── src/
+│   │   ├── ai/             # AI 引擎
+│   │   │   ├── engine.rs   # AI 主引擎
+│   │   │   ├── minimax.rs  # Minimax 算法
+│   │   │   ├── evaluator.rs # 局面评估
+│   │   │   └── pattern.rs  # 棋型识别
+│   │   ├── game/           # 游戏逻辑
+│   │   │   ├── board.rs    # 棋盘逻辑
+│   │   │   ├── rules.rs    # 规则判定
+│   │   │   └── types.rs    # 类型定义
+│   │   ├── storage/        # 数据存储
+│   │   └── commands/       # Tauri 命令
+│   └── tauri.conf.json     # Tauri 配置
+├── docs/                   # 项目文档
+└── dist/                   # 构建输出
+```
+
+## 🎯 使用指南
+
+### 开始新游戏
+
+1. 启动应用后，选择游戏模式（人人对弈 / 人机对弈）
+2. 如选择人机对弈，可设置 AI 难度
+3. 点击「开始游戏」按钮
+
+### 游戏操作
+
+| 操作 | 说明 |
+|------|------|
+| 点击棋盘交叉点 | 落子 |
+| 悔棋 | 撤销上一步操作 |
+| 重做 | 恢复撤销的操作 |
+| 新游戏 | 重新开始对局 |
+| 保存 | 保存当前游戏进度 |
+| 加载 | 加载之前保存的游戏 |
+
+### 快捷键
+
+| 快捷键 | 功能 |
+|--------|------|
+| `Cmd + Z` | 悔棋 |
+| `Cmd + Shift + Z` | 重做 |
+
+## 🧠 AI 算法说明
+
+AI 采用经典的 **Minimax 算法** 配合 **Alpha-Beta 剪枝** 优化：
+
+- **简单难度**：搜索深度 2 层
+- **中等难度**：搜索深度 4 层
+- **困难难度**：搜索深度 6 层
+
+### 棋型评估
+
+AI 会识别以下棋型并进行打分：
+
+| 棋型 | 说明 | 评分 |
+|------|------|------|
+| 连五 | 五子连珠 | 100,000 |
+| 活四 | 两端开放的四连 | 10,000 |
+| 冲四 | 一端封闭的四连 | 1,000 |
+| 活三 | 两端开放的三连 | 500 |
+| 眠三 | 一端封闭的三连 | 100 |
+| 活二 | 两端开放的二连 | 50 |
+| 眠二 | 一端封闭的二连 | 10 |
+
+## 📖 相关文档
+
+- [架构设计](docs/architecture.md) - 详细的系统架构文档
+- [游戏规则](docs/gomoku_rules.md) - 五子棋完整规则说明
+- [MVP 任务](docs/tasks_mvp.md) - 基础功能开发任务
+- [增强任务](docs/tasks_enhance.md) - 高级功能开发任务
+
+## 🔧 开发命令
+
+```bash
+# 前端开发（仅 Web）
+pnpm dev
+
+# Tauri 开发模式
+pnpm tauri dev
+
+# 代码检查
+pnpm lint
+
+# 生产构建
+pnpm tauri build
+```
+
+## 📝 更新日志
+
+详见 [RELEASE.md](RELEASE.md)
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
+
+---
+
+<p align="center">
+  Made with ❤️ using Tauri + React + Rust
+</p>
